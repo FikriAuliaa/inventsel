@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: inventsel-app
+    container_name: inventsel-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - .:/var/www
+    networks:
+      - inventsel-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: inventsel-webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d/
+    networks:
+      - inventsel-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: inventsel-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - inventsel-db-data:/var/lib/postgresql/data
+    networks:
+      - inventsel-network
+
+networks:
+  inventsel-network:
+    driver: bridge
+
+volumes:
+  inventsel-db-data:
+    driver: local
