@@ -16,8 +16,14 @@ class DashboardController extends Controller
         $barangTersedia = ProductInstance::where('status_ketersediaan', 'Tersedia')->count();
         $barangDipinjam = ProductInstance::where('status_ketersediaan', 'Dipinjam')->count();
 
+        // Deteksi secara dinamis jenis database yang sedang aktif (MySQL atau PostgreSQL)
+        $driver = DB::getDriverName();
+        $monthQuery = $driver === 'pgsql'
+            ? 'EXTRACT(MONTH FROM tanggal_pinjam) as month'
+            : 'MONTH(tanggal_pinjam) as month';
+
         $borrowingsPerMonth = Borrowing::select(
-            DB::raw('MONTH(tanggal_pinjam) as month'),
+            DB::raw($monthQuery),
             DB::raw('COUNT(*) as count')
         )
             ->whereYear('tanggal_pinjam', Carbon::now()->year)
@@ -28,7 +34,8 @@ class DashboardController extends Controller
         $chartData = array_fill(1, 12, 0);
 
         foreach ($borrowingsPerMonth as $data) {
-            $chartData[$data->month] = $data->count;
+            $monthIndex = (int) $data->month;
+            $chartData[$monthIndex] = $data->count;
         }
 
         $chartData = array_values($chartData);
