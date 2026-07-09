@@ -33,12 +33,13 @@ COPY . .
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
-# === OPTIMASI PERMISSION (Hanya folder krusial agar tidak timeout) ===
-RUN chown -R $user:www-data /var/www/storage /var/www/bootstrap/cache
+# Jalankan instalasi & build menggunakan root agar tidak terhalang permission
+RUN npm install && npm run build
+
+# Setelah build selesai, ubah kepemilikan seluruh folder kerja ke user aplikasi
+RUN chown -R $user:www-data /var/www
 
 USER $user
-
-RUN npm install && npm run build
 
 EXPOSE 9000
 
