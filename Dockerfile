@@ -20,7 +20,7 @@ RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
 RUN useradd -G www-data,root -u $uid -d /home/$user $user
@@ -33,11 +33,11 @@ COPY . .
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
-RUN npm install && npm run build
-
-RUN chown -R $user:www-data /var/www/storage /var/www/bootstrap/cache
+RUN chown -R $user:www-data /var/www
 
 USER $user
+
+RUN npm install && npm run build
 
 EXPOSE 9000
 
