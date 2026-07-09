@@ -67,8 +67,12 @@
                         <label for="remember_me" class="ms-2 text-xs font-medium text-gray-600 cursor-pointer">Ingat
                             saya</label>
                     </div>
-                    <a href="{{ route('register') }}"
-                        class="text-xs font-semibold text-indigo-600 hover:underline">Daftar Akun</a>
+
+                    {{-- Mengamankan tombol register dengan validasi rute dinamis --}}
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}"
+                            class="text-xs font-semibold text-indigo-600 hover:underline">Daftar Akun</a>
+                    @endif
                 </div>
 
                 <button type="submit"
