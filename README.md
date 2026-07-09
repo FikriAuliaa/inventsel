@@ -1,59 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# INVENTSEL - Sistem Manajemen Inventaris
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+INVENTSEL adalah aplikasi manajemen inventaris berbasis web yang dirancang khusus untuk mengelola, melacak, dan memonitor aset logistik seperti perangkat multimedia, alat IT, fasilitas kantor, dan perkakas teknik. Aplikasi ini mengadopsi arsitektur modern berbasis kontainer untuk menjamin keandalan dan skalabilitas sistem di lingkungan produksi.
 
-## About Laravel
+## Fitur Utama
+Manajemen Katalog & Instansiasi Barang: Pemisahan antara master data template produk dengan unit spesifik (serial number/kode unik) beserta pelacakan kondisi barang (Baik, Rusak Ringan, Rusak Berat).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Log Peminjaman & Pengembalian Otomatis: Pencatatan otomatis transaksi peminjaman barang terintegrasi dengan pembaruan status ketersediaan unit secara real-time.
+- Dashboard Statistik Bulanan Dinamis: Grafik peminjaman bulanan yang dibangun secara dinamis dan adaptif terhadap multi-database engine.
+- Ekspor Laporan Fleksibel: Mendukung pengunduhan data riwayat logistik dalam format Excel (.xlsx) dan PDF (.pdf).
+- Peningkatan Keamanan Produksi: Menonaktifkan fitur registrasi akun publik (/register) guna menghindari pendaftaran akun tidak sah oleh pihak luar.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Application Flow (Alur Aplikasi)
+Berikut adalah gambaran alur logika proses peminjaman dan pengembalian unit barang di dalam sistem INVENTSEL:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```mermaid
+graph TD
+    A[Staf / Logistik Login] --> B{Pilih Aksi}
+    B -->|Peminjaman| C[Pilih Unit Barang 'Tersedia']
+    C --> D[Catat Log Peminjaman]
+    D --> E[Status Unit Berubah: 'Dipinjam']
+    
+    B -->|Pengembalian| F[Pilih Transaksi Aktif]
+    F --> G[Proses Pengembalian]
+    G --> H[Status Unit Kembali: 'Tersedia']
+    H --> I[Catat Tanggal Kembali & Selesai]
+```
 
-## Learning Laravel
+## Database Schema & ERD
+Sistem ini menggunakan relasi database yang memisahkan entitas pengguna (User), peran (Role), kategori (Category), template produk (Product), dan satuan instansi (Product Instance) untuk mendukung pencatatan riwayat peminjaman (Borrowing) yang mendetail.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```mermaid
+erDiagram
+    ROLES ||--o{ USERS : "memiliki"
+    CATEGORIES ||--o{ PRODUCTS : "mengelompokkan"
+    PRODUCTS ||--o{ PRODUCT_INSTANCES : "memiliki satuan"
+    USERS ||--o{ BORROWINGS : "melakukan"
+    BORROWINGS ||--o{ BORROWING_DETAILS : "memiliki rincian"
+    PRODUCT_INSTANCES ||--o{ BORROWING_DETAILS : "tercatat di"
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+    USERS {
+        bigint id PK
+        string name
+        string email
+        string password
+        bigint role_id FK
+    }
+    PRODUCTS {
+        bigint id PK
+        string kode_barang
+        string nama_barang
+        integer stok
+        bigint category_id FK
+    }
+    PRODUCT_INSTANCES {
+        bigint id PK
+        string kode_unik
+        string kondisi_barang
+        string status_ketersediaan
+        bigint product_id FK
+    }
+```
 
-## Laravel Sponsors
+## DevOps & Arsitektur Infrastruktur
+Aplikasi didistribusikan menggunakan Docker Compose dalam lingkungan terisolasi (Bridge Network) untuk memisahkan tanggung jawab antara web server, core application, dan database.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Spesifikasi Tech Stack
+- Backend Framework: Laravel 11 (PHP 8.x)
+- Web Server: Nginx (Alpine Image)
+- Database Engine: PostgreSQL 15 (Environment Produksi) / MySQL (Environment Lokal)
+- Frontend Compiler: Vite & Tailwind CSS
 
-### Premium Partners
+## Arsitektur Jaringan Kontainer
+```
+[ Jagat Internet ] 
+       │ (HTTPS - Port 443 / HTTP - Port 80)
+       ▼
+┌──────────────────────────────────────── VPS Ubuntu Host ────────────────────────────────────────┐
+│                                                                                                 │
+│  ┌────────────────────────────── Docker Compose Network (Bridge) ────────────────────────────┐  │
+│  │                                                                                           │  │
+│  │  [ inventsel-webserver (Nginx:alpine) ] ───► Membaca SSL dari /etc/letsencrypt (Host)      │  │
+│  │               │                                                                           │  │
+│  │               ▼ (FastCGI Pass - Port 9000)                                                │  │
+│  │  [ inventsel-app (Laravel 11) ]                                                           │  │
+│  │               │                                                                           │  │
+│  │               ▼ (PostgreSQL Port 5432)                                                    │  │
+│  │  [ inventsel-db (PostgreSQL 15) ] ───► Volume Terisolasi (inventsel-db-data)              │  │
+│  │                                                                                           │  │
+│  └───────────────────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## CI/CD Pipeline (Automated Deployment)
+Proses pembaruan fitur dan perbaikan kode berjalan secara otomatis dari lokal hingga server produksi menggunakan GitHub Actions.
 
-## Contributing
+```mermaid
+graph LR
+    A[Lokal: Git Push] --> B[GitHub Repository]
+    B --> C[Trigger GitHub Actions]
+    C --> D[Proses Build & Test]
+    D --> E[SSH Tunneling ke VPS]
+    E --> F[VPS: Pull Code Terbaru]
+    F --> G[VPS: Restart Containers & Clear Cache]
+    G --> H[Live di builtbyfikri.cloud]
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Panduan Instalasi Lokal
+Jika Anda ingin menjalankan proyek ini untuk kebutuhan pengembangan (development) di komputer lokal, ikuti langkah-langkah berikut:
 
-## Code of Conduct
+### 1. Clone Repositori:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```Bash
+git clone https://github.com/username/inventsel.git
+cd inventsel
+```
 
-## Security Vulnerabilities
+### 2. Salin Environment File:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```Bash
+cp .env.example .env
+Sesuaikan pengaturan DB_CONNECTION=mysql dan sesuaikan nama database serta password untuk environment lokal Anda.
+```
 
-## License
+### 3. Jalankan Kontainer Docker:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```Bash
+docker-compose up -d
+```
+
+### 4. Instal Dependensi & Generate Key:
+
+```Bash
+docker-compose exec app composer install
+docker-compose exec app npm install
+docker-compose exec app npm run build
+docker-compose exec app php artisan key:generate
+```
+
+### 5. Jalankan Migrasi dan Sinkronisasi Data (Seeder):
+```Bash
+docker-compose exec app php artisan migrate:fresh --seed
+```
+
+## Akun Login Pengujian (Testing Accounts)
+
+Setelah database berhasil dimigrasikan dan diisi menggunakan perintah *seeder*, Anda dapat menggunakan akun-akun bawaan berikut untuk menguji fungsionalitas hak akses (*Role-Based Access Control*) pada halaman login:
+
+| Role / Hak Akses | Alamat Email | Kata Sandi (Password) |
+| :--- | :--- | :--- |
+| **Super Admin** | `admin@inventsel.com` | `password` |
+| **Staf Gudang / Logistik** | `staff@inventsel.com` | `password` |
+| **Manajer** | `manager@inventsel.com` | `password` |
+
+*(Catatan: Segera hapus atau ubah kredensial default ini sebelum menaikkan kode ke repositori atau lingkungan produksi publik).*
