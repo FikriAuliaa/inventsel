@@ -33,11 +33,7 @@ COPY . .
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
-# Jalankan instalasi & build menggunakan root agar tidak terhalang permission
 RUN npm install && npm run build
-
-# Setelah build selesai, ubah kepemilikan seluruh folder kerja ke user aplikasi
-RUN chown -R $user:www-data /var/www
 
 USER $user
 
