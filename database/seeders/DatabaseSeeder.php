@@ -84,6 +84,7 @@ class DatabaseSeeder extends Seeder
                 'lokasi_penyimpanan' => $template['lokasi'],
                 'kode_barang' => $template['kode'],
                 'stok' => $template['stok'],
+                'kondisi_barang' => 'Baik', // Menghindari Not Null Violation pada tabel products
                 'gambar' => null
             ]);
 
