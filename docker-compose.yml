@@ -14,24 +14,21 @@ services:
       SERVICE_TAGS: dev
     volumes:
       - .:/var/www
-      - /var/www/vendor/
-      - /var/www/node_modules/
+      - /var/www/vendor
+      - /var/www/node_modules
     networks:
       - inventsel-network
 
   webserver:
     image: nginx:alpine
     container_name: inventsel-webserver
-    restart: unless-stopped
-    tty: true
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - .:/var/www
-      - /var/www/vendor/
-      - /var/www/node_modules/
-      - ./docker-compose/nginx:/etc/nginx/conf.d/
+      - ./:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - inventsel-network
 
