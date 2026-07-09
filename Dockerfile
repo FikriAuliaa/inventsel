@@ -33,7 +33,8 @@ COPY . .
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
-RUN chown -R $user:www-data /var/www
+# === OPTIMASI PERMISSION (Hanya folder krusial agar tidak timeout) ===
+RUN chown -R $user:www-data /var/www/storage /var/www/bootstrap/cache
 
 USER $user
 
