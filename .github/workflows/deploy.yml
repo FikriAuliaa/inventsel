@@ -1,0 +1,46 @@
+name: INVENTSEL Production Deployment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, iconv, mysql, pdo_mysql, pdo_pgsql, pgsql, bcmath, gd
+
+      - name: Install Composer Dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Execute Syntax Check (Lint)
+        run: php -l app/Http/Controllers/Api/v1/*.php
+
+  deploy-to-vps:
+    needs: laravel-tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploying via SSH Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: 103.181.142.78
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script: |
+            cd /var/www/inventsel
+            git pull origin main
+            sudo docker-compose down
+            sudo docker-compose up -d --build
+            sudo docker-compose exec -T app php artisan migrate --force
+            sudo docker-compose exec -T app php artisan view:clear
+            sudo docker-compose exec -T app php artisan config:clear
