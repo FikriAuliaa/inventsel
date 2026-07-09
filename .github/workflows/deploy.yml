@@ -41,6 +41,12 @@ jobs:
             git pull origin main
             sudo docker-compose down
             sudo docker-compose up -d --build
+
+            # === PERBAIKAN PERMISSION DENIED (TAMBAHKAN 2 BARIS INI) ===
+            sudo chmod -R 775 storage bootstrap/cache
+            sudo chown -R 1000:www-data storage bootstrap/cache
+
+            # Jalankan perintah operasional Laravel
             sudo docker-compose exec -T app php artisan migrate --force
-            sudo docker-compose exec -T app php artisan view:clear
             sudo docker-compose exec -T app php artisan config:clear
+            sudo docker-compose exec -T app php artisan view:clear
