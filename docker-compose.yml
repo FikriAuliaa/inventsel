@@ -18,6 +18,11 @@ services:
       - /var/www/node_modules
     networks:
       - inventsel-network
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
   webserver:
     image: nginx:alpine
@@ -31,6 +36,9 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - inventsel-network
+    depends_on:
+      app:
+        condition: service_healthy
 
   db:
     image: postgres:15-alpine
